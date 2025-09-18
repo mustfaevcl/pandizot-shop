@@ -16,6 +16,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Şifre en az 6 karakter olmalı.' }, { status: 400 });
     }
 
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json({ error: 'Veritabanı bağlantısı kurulamadı. Lütfen yönetici ile iletişime geçin.' }, { status: 503 });
+    }
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     });
