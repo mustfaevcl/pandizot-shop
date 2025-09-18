@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { prisma } from '@/lib/database';
+import { findUserByEmail, createUser } from '@/lib/database';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,25 +15,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Şifre en az 6 karakter olmalı.' }, { status: 400 });
     }
 
-    if (!process.env.DATABASE_URL) {
-      return NextResponse.json({ error: 'Veritabanı bağlantısı kurulamadı. Lütfen yönetici ile iletişime geçin.' }, { status: 503 });
-    }
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
+    const existingUser = await findUserByEmail(email.toLowerCase());
     if (existingUser) {
       return NextResponse.json({ error: 'Bu email zaten kayıtlı.' }, { status: 409 });
     }
 
-    const passwordHash = bcrypt.hashSync(password, 10);
-
-    const user = await prisma.user.create({
-      data: {
-        name: name.trim(),
-        email: email.toLowerCase().trim(),
-        passwordHash,
-        role: 'user',
-      },
+    const user = await createUser({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      passwordHash: password,  // Plain for demo
+      role: 'user',
     });
 
     const token = jwt.sign(

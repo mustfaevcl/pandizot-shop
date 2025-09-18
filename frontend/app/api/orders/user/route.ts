@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 import jwt from 'jsonwebtoken';
-import { prisma } from '@/lib/database';
+import { getUserOrders } from '@/lib/database';
 import { requireAuth } from '@/lib/middleware/auth';
 
 export async function GET(req: NextRequest) {
@@ -17,10 +17,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Yetkisiz.' }, { status: 401 });
       }
 
-      const orders = await prisma.order.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-      });
+      const orders = await getUserOrders(userId);
       return NextResponse.json(orders);
     } catch (error) {
       console.error('Get user orders error:', error);

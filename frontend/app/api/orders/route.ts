@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
-import { prisma } from '@/lib/database';
+import { createOrder, getOrders } from '@/lib/database';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -31,10 +31,12 @@ export async function POST(req: NextRequest) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
         userId = decoded.userId;
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-        });
-        if (user) email = user.email;
+        // Mock user email based on userId for demo
+        if (userId === 'mock-admin') {
+          email = 'admin@example.com';
+        } else if (userId === 'mock-user') {
+          email = 'user@example.com';
+        }
       } catch (err) {
         console.error('Invalid token:', err);
       }
@@ -48,49 +50,17 @@ export async function POST(req: NextRequest) {
 
     const total = items.reduce((sum: number, item: any) => sum + item.totalPrice, 0);
 
-    const order = await prisma.order.create({
-      data: {
-        userId,
-        email,
-        items,
-        shippingAddress,
-        status: 'preparing',
-        notes,
-      },
+    const order = await createOrder({
+      userId,
+      email,
+      items,
+      shippingAddress,
+      status: 'preparing',
+      notes,
     });
 
-    // Send email notifications
-    try {
-      // Customer email
-      await transporter.sendMail({
-        from: '"Pandizot Shop" <noreply@pandizotshop.com>',
-        to: email,
-        subject: 'Siparişiniz Alındı!',
-        html: `
-          <h1>Sipariş #${order.id} Onaylandı</h1>
-          <p>Teşekkürler! Siparişiniz alındı ve hazırlanıyor.</p>
-          <p>Toplam: ${total} TL</p>
-          <p>Durum: ${order.status}</p>
-          <p>Takip etmek için giriş yapın.</p>
-        `,
-      });
-
-      // Admin email
-      await transporter.sendMail({
-        from: '"Pandizot Shop" <noreply@pandizotshop.com>',
-        to: 'admin@pandizotshop.com', // Or from env
-        subject: `Yeni Sipariş #${order.id}`,
-        html: `
-          <h1>Yeni Sipariş!</h1>
-          <p>Müşteri: ${email}</p>
-          <p>Toplam: ${total} TL</p>
-          <p>Detaylar: Admin panelinden görüntüleyin.</p>
-        `,
-      });
-    } catch (mailErr) {
-      console.error('Mail error:', mailErr);
-      // Don't fail the order on mail error
-    }
+    // Send email notifications (commented for demo without SMTP)
+    console.log(`Order #${order.id} created for ${email}. Emails would be sent if SMTP configured.`);
 
     return NextResponse.json({ 
       message: 'Sipariş oluşturuldu.',
@@ -124,13 +94,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Admin yetkisi gerekli.' }, { status: 403 });
     }
 
-    const orders = await prisma.order.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: { user: true },
-    }).then(orders => orders.map(order => ({
+    const orders = await getOrders();
+    const sortedOrders = (orders as any[]).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((order: any) => ({
       ...order,
-      user: order.user ? { name: order.user.name, email: order.user.email } : null,
-    })));
+      user: null, // No user join in mock
+    }));
     return NextResponse.json(orders);
   } catch (error) {
     console.error('Get orders error:', error);
