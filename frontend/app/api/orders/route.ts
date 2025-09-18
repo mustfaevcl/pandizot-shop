@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const runtime = 'nodejs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import { connectDB, Order, User } from '@/lib/database';

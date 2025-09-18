@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const runtime = 'nodejs';
 import { computePrice, SpeakerType } from '@/lib/database';
 
 export async function POST(req: NextRequest) {

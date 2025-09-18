@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const runtime = 'nodejs';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { connectDB, User } from '@/lib/database';

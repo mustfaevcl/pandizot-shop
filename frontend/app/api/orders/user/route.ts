@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const runtime = 'nodejs';
 import jwt from 'jsonwebtoken';
 import { connectDB, Order } from '@/lib/database';
 import { requireAuth } from '@/lib/middleware/auth';

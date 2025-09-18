@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const runtime = 'nodejs';
 import { connectDB, PricingRule, IPricingRule } from '@/lib/database';
 import { requireAdmin } from '@/lib/middleware/auth';
 
