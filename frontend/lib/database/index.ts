@@ -27,7 +27,7 @@ let pricingRules = [
   },
 ];
 
-let orders = [];
+let orders: any[] = [];
 
 // ============== User Functions =================
 export async function findUserByEmail(email: string) {
@@ -103,12 +103,12 @@ export async function computePrice(input: {
 }
 
 // ============== Auth Helpers =================
-export function getMockHash() {
+export async function getMockHash() {
   return '$2a$10$mockhash'; // Dummy hash for demo
 }
 
 // Initialize data
 users = [
-  { id: 'mock-admin', name: 'Demo Admin', email: 'admin@example.com', passwordHash: getMockHash(), role: 'admin' },
-  { id: 'mock-user', name: 'Demo User', email: 'user@example.com', passwordHash: getMockHash(), role: 'user' },
+  { id: 'mock-admin', name: 'Demo Admin', email: 'admin@example.com', passwordHash: '$2a$10$mockhash', role: 'admin' },
+  { id: 'mock-user', name: 'Demo User', email: 'user@example.com', passwordHash: '$2a$10$mockhash', role: 'user' },
 ];
