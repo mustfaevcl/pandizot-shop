@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
-import { connectDB, Order, User } from '@/lib/database';
+import { prisma } from '@/lib/database';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -16,7 +16,6 @@ const transporter = nodemailer.createTransport({
 
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
 
     const token = req.cookies.get('authToken')?.value;
     const { items, shippingAddress, notes, isGuest } = await req.json();
@@ -32,7 +31,9 @@ export async function POST(req: NextRequest) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
         userId = decoded.userId;
-        const user = await User.findById(userId);
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+        });
         if (user) email = user.email;
       } catch (err) {
         console.error('Invalid token:', err);
@@ -47,13 +48,15 @@ export async function POST(req: NextRequest) {
 
     const total = items.reduce((sum: number, item: any) => sum + item.totalPrice, 0);
 
-    const order = await Order.create({
-      userId,
-      email,
-      items,
-      shippingAddress,
-      status: 'preparing',
-      notes,
+    const order = await prisma.order.create({
+      data: {
+        userId,
+        email,
+        items,
+        shippingAddress,
+        status: 'preparing',
+        notes,
+      },
     });
 
     // Send email notifications
@@ -64,7 +67,7 @@ export async function POST(req: NextRequest) {
         to: email,
         subject: 'Siparişiniz Alındı!',
         html: `
-          <h1>Sipariş #${order._id} Onaylandı</h1>
+          <h1>Sipariş #${order.id} Onaylandı</h1>
           <p>Teşekkürler! Siparişiniz alındı ve hazırlanıyor.</p>
           <p>Toplam: ${total} TL</p>
           <p>Durum: ${order.status}</p>
@@ -76,7 +79,7 @@ export async function POST(req: NextRequest) {
       await transporter.sendMail({
         from: '"Pandizot Shop" <noreply@pandizotshop.com>',
         to: 'admin@pandizotshop.com', // Or from env
-        subject: `Yeni Sipariş #${order._id}`,
+        subject: `Yeni Sipariş #${order.id}`,
         html: `
           <h1>Yeni Sipariş!</h1>
           <p>Müşteri: ${email}</p>
@@ -91,7 +94,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ 
       message: 'Sipariş oluşturuldu.',
-      orderId: order._id,
+      orderId: order.id,
       total 
     });
 
@@ -104,7 +107,6 @@ export async function POST(req: NextRequest) {
 // GET all orders (admin only)
 export async function GET(req: NextRequest) {
   try {
-    await connectDB();
 
     const token = req.cookies.get('authToken')?.value;
     if (!token) {
@@ -122,7 +124,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Admin yetkisi gerekli.' }, { status: 403 });
     }
 
-    const orders = await Order.find().sort({ createdAt: -1 }).populate('userId', 'name email');
+    const orders = await prisma.order.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { user: true },
+    }).then(orders => orders.map(order => ({
+      ...order,
+      user: order.user ? { name: order.user.name, email: order.user.email } : null,
+    })));
     return NextResponse.json(orders);
   } catch (error) {
     console.error('Get orders error:', error);

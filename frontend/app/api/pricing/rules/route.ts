@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
-import { connectDB, PricingRule, IPricingRule } from '@/lib/database';
+import { prisma } from '@/lib/database';
 import { requireAdmin } from '@/lib/middleware/auth';
 
 export async function GET(req: NextRequest) {
   const handler = requireAdmin(async (req: NextRequest) => {
     try {
-      await connectDB();
-      const rules = await PricingRule.find({ isActive: true }).lean();
+      const rules = await prisma.pricingRule.findMany({
+        where: { isActive: true },
+      });
       return NextResponse.json(rules);
     } catch (error) {
       console.error('Get pricing rules error:', error);
@@ -21,24 +22,34 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const handler = requireAdmin(async (req: NextRequest) => {
     try {
-      await connectDB();
-      const data: Omit<IPricingRule, 'createdAt' | 'updatedAt'> = await req.json();
+      const data = await req.json();
 
       if (!data.vehicleBrand || !data.vehicleModel || data.basePrice <= 0) {
         return NextResponse.json({ error: 'Geçersiz veri.' }, { status: 400 });
       }
 
-      const existing = await PricingRule.findOne({
-        vehicleBrand: data.vehicleBrand,
-        vehicleModel: data.vehicleModel,
+      const existing = await prisma.pricingRule.findFirst({
+        where: {
+          vehicleBrand: data.vehicleBrand,
+          vehicleModel: data.vehicleModel,
+        },
       });
 
       if (existing) {
         return NextResponse.json({ error: 'Bu marka/model zaten var.' }, { status: 409 });
       }
 
-      const rule = await PricingRule.create(data);
-      return NextResponse.json({ message: 'Kural eklendi.', rule: rule.toObject() }, { status: 201 });
+      const rule = await prisma.pricingRule.create({
+        data: {
+          vehicleBrand: data.vehicleBrand,
+          vehicleModel: data.vehicleModel,
+          basePrice: data.basePrice,
+          speakerTypeMultipliers: data.multipliers.speakerType,
+          tweeterUnitPrice: data.multipliers.tweeterUnitPrice,
+          isActive: true,
+        },
+      });
+      return NextResponse.json({ message: 'Kural eklendi.', rule }, { status: 201 });
     } catch (error) {
       console.error('Create pricing rule error:', error);
       return NextResponse.json({ error: 'Kural eklenemedi.' }, { status: 500 });
@@ -51,15 +62,13 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const handler = requireAdmin(async (req: NextRequest) => {
     try {
-      await connectDB();
       const { id } = params;
-      const updateData: Partial<IPricingRule> = await req.json();
+      const updateData = await req.json();
 
-      const rule = await PricingRule.findByIdAndUpdate(id, updateData, { new: true, runValidators: true }).lean();
-
-      if (!rule) {
-        return NextResponse.json({ error: 'Kural bulunamadı.' }, { status: 404 });
-      }
+      const rule = await prisma.pricingRule.update({
+        where: { id },
+        data: updateData,
+      });
 
       return NextResponse.json({ message: 'Kural güncellendi.', rule });
     } catch (error) {
@@ -74,14 +83,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   const handler = requireAdmin(async (req: NextRequest) => {
     try {
-      await connectDB();
       const { id } = params;
 
-      const rule = await PricingRule.findByIdAndUpdate(id, { isActive: false }, { new: true });
-
-      if (!rule) {
-        return NextResponse.json({ error: 'Kural bulunamadı.' }, { status: 404 });
-      }
+      const rule = await prisma.pricingRule.update({
+        where: { id },
+        data: { isActive: false },
+      });
 
       return NextResponse.json({ message: 'Kural devre dışı bırakıldı.' });
     } catch (error) {

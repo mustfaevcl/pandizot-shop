@@ -1,55 +1,58 @@
-import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { connectDB, User, PricingRule, Order, seedExamples } from '../lib/database';
+import { prisma, seedExamples } from '../lib/database';
 
 const seed = async () => {
   try {
-    await connectDB();
-
     // Clear existing data
-    await User.deleteMany({});
-    await PricingRule.deleteMany({});
-    await Order.deleteMany({});
+    await prisma.user.deleteMany({});
+    await prisma.pricingRule.deleteMany({});
+    await prisma.order.deleteMany({});
 
     // Create admin user
     const adminPassword = 'admin';
     const adminHash = bcrypt.hashSync(adminPassword, 10);
-    const admin = await User.create({
-      name: 'Super Admin',
-      email: 'admin@example.com',
-      passwordHash: adminHash,
-      role: 'admin',
+    await prisma.user.create({
+      data: {
+        name: 'Super Admin',
+        email: 'admin@example.com',
+        passwordHash: adminHash,
+        role: 'admin',
+      },
     });
 
     // Create test users
     const userHash = bcrypt.hashSync('password', 10);
-    await User.create([
-      {
-        name: 'Test User',
-        email: 'user@example.com',
-        passwordHash: userHash,
-        role: 'user',
-      },
-      {
-        name: 'Test User 2',
-        email: 'user2@example.com',
-        passwordHash: userHash,
-        role: 'user',
-      },
-    ]);
+    await prisma.user.createMany({
+      data: [
+        {
+          name: 'Test User',
+          email: 'user@example.com',
+          passwordHash: userHash,
+          role: 'user',
+        },
+        {
+          name: 'Test User 2',
+          email: 'user2@example.com',
+          passwordHash: userHash,
+          role: 'user',
+        },
+      ],
+    });
 
     // Seed pricing rules
     await seedExamples();
 
     // Create test orders
-    const testUser = await User.findOne({ email: 'user@example.com' });
+    const testUser = await prisma.user.findUnique({
+      where: { email: 'user@example.com' },
+    });
     if (testUser) {
-      await Order.create([
-        {
-          userId: testUser._id,
-          email: testUser.email,
-          items: [
-            {
+      await prisma.order.createMany({
+        data: [
+          {
+            userId: testUser.id,
+            email: testUser.email,
+            items: {
               vehicleBrand: 'Volkswagen',
               vehicleModel: 'Golf',
               speakerType: '4x20',
@@ -61,21 +64,19 @@ const seed = async () => {
               totalPrice: 120,
               previewImageUrl: '/speakers/4x20.jpg',
             },
-          ],
-          shippingAddress: {
-            fullName: 'Test User',
-            phone: '555-1234',
-            addressLine1: 'Test Adres 123',
-            city: 'İstanbul',
-            country: 'TR',
+            shippingAddress: {
+              fullName: 'Test User',
+              phone: '555-1234',
+              addressLine1: 'Test Adres 123',
+              city: 'İstanbul',
+              country: 'TR',
+            },
+            status: 'delivered',
           },
-          status: 'delivered',
-        },
-        {
-          userId: testUser._id,
-          email: testUser.email,
-          items: [
-            {
+          {
+            userId: testUser.id,
+            email: testUser.email,
+            items: {
               vehicleBrand: 'Toyota',
               vehicleModel: 'Corolla',
               speakerType: '4-oval',
@@ -87,17 +88,17 @@ const seed = async () => {
               totalPrice: 250,
               previewImageUrl: '/speakers/oval.jpg',
             },
-          ],
-          shippingAddress: {
-            fullName: 'Test User',
-            phone: '555-1234',
-            addressLine1: 'Test Adres 456',
-            city: 'Ankara',
-            country: 'TR',
+            shippingAddress: {
+              fullName: 'Test User',
+              phone: '555-1234',
+              addressLine1: 'Test Adres 456',
+              city: 'Ankara',
+              country: 'TR',
+            },
+            status: 'preparing',
           },
-          status: 'preparing',
-        },
-      ]);
+        ],
+      });
     }
 
     console.log('Seeding completed successfully!');
