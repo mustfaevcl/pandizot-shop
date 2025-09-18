@@ -43,7 +43,7 @@ const AnimatedLogo = () => (
       animate={{ scale: 1, rotate: 0 }}
       transition={{ type: 'spring', stiffness: 100, damping: 10 }}
     >
-      PANDIZOT
+      HAKAN PANDIZOT
     </motion.h1>
     <motion.p
       className="text-xl md:text-2xl text-metallic mt-4"

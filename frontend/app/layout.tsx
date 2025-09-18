@@ -5,18 +5,18 @@ import NavBar from '@/components/NavBar';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Pandizot Shop - Özel Araç Ses Sistemleri',
+  title: 'Hakan Pandizot - Özel Araç Ses Sistemleri',
   description: 'Modern pandizotlar için özelleştirilmiş e-ticaret platformu. Aracınıza özel hoparlör ve tiz kombinasyonları ile mükemmel ses deneyimi.',
-  keywords: 'pandizot, araç ses sistemi, hoparlör, tiz, özelleştirme, e-ticaret',
+  keywords: 'hakan pandizot, araç ses sistemi, hoparlör, tiz, özelleştirme, e-ticaret',
   openGraph: {
-    title: 'Pandizot Shop',
+    title: 'Hakan Pandizot',
     description: 'Özel pandizotlarınızı tasarlayın ve satın alın.',
     images: '/og-image.jpg',
-    siteName: 'Pandizot Shop',
+    siteName: 'Hakan Pandizot',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Pandizot Shop',
+    title: 'Hakan Pandizot',
     description: 'Özel pandizotlarınızı tasarlayın ve satın alın.',
     images: '/twitter-image.jpg',
   },

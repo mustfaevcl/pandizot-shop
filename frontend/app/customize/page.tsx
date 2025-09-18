@@ -35,7 +35,7 @@ const addOns = [
 ];
 
 // Simple price calculation (mock, later connect to backend)
-const calculatePrice = (brandId: number, model: string, speakerType: string, selectedAddOns: string[]) => {
+const calculatePrice = (brandId: number, model: string, speakerType: string, selectedAddOns: string[], selectedFabric?: string, selectedEmbedded?: boolean) => {
   // Base price by brand
   const basePrices: Record<number, number> = { 1: 120, 2: 110, 3: 150, 4: 140 };
   let base = basePrices[brandId] || 100;
@@ -47,7 +47,13 @@ const calculatePrice = (brandId: number, model: string, speakerType: string, sel
   // Add-ons
   const addOnPrices = addOns.filter(addOn => selectedAddOns.includes(addOn.id)).reduce((sum, addOn) => sum + addOn.price, 0);
 
-  return Math.round(base + addOnPrices);
+  // Fabric +100 if selected
+  const fabricPrice = selectedFabric ? 100 : 0;
+
+  // Embedded +150 if selected
+  const embeddedPrice = selectedEmbedded ? 150 : 0;
+
+  return Math.round(base + addOnPrices + fabricPrice + embeddedPrice);
 };
 
 // Preview component
@@ -82,10 +88,13 @@ export default function Customize() {
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedSpeakerType, setSelectedSpeakerType] = useState('');
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
+const [selectedFabric, setSelectedFabric] = useState('');
+const [selectedEmbedded, setSelectedEmbedded] = useState(false);
+const [selectedCircleColor, setSelectedCircleColor] = useState('');
   const [currentSpeaker, setCurrentSpeaker] = useState(speakerTypes[0]);
   const addItem = useCartStore((state) => state.addItem);
 
-  const price = calculatePrice(selectedBrand || 1, selectedModel, selectedSpeakerType, selectedAddOns);
+  const price = calculatePrice(selectedBrand || 1, selectedModel, selectedSpeakerType, selectedAddOns, selectedFabric, selectedEmbedded);
 
   const handleAddToCart = () => {
     if (!selectedBrand || !selectedModel || !selectedSpeakerType) {
@@ -148,7 +157,7 @@ export default function Customize() {
                           setSelectedBrand(parseInt(e.target.value));
                           setSelectedModel('');
                         }}
-                        className="w-full p-3 bg-white/10 border border-white/20 rounded-lg text-white"
+                        className="w-full p-3 bg-white border border-gray-300 rounded-lg text-black"
                       >
                         <option value="">Marka Seçin</option>
                         {brands.map((brand) => (
@@ -164,7 +173,7 @@ export default function Customize() {
                         <select
                           value={selectedModel}
                           onChange={(e) => setSelectedModel(e.target.value)}
-                          className="w-full p-3 bg-white/10 border border-white/20 rounded-lg text-white"
+                          className="w-full p-3 bg-white border border-gray-300 rounded-lg text-black"
                         >
                           <option value="">Model Seçin</option>
                           {(modelsByBrand as Record<number, string[]>) [selectedBrand]?.map((model: string) => (
@@ -249,6 +258,71 @@ export default function Customize() {
                         <span className="ml-auto text-primary-500 font-semibold">+{addOn.price} TL</span>
                       </motion.label>
                     ))}
+                    <div className="pt-4 border-t border-white/20">
+                      <h4 className="text-lg font-semibold text-primary-500 mb-2">Kumaş Rengi Seçimi (+100 TL)</h4>
+                      {['krem', 'mavi', 'kırmızı', 'sarı'].map((color) => (
+                        <motion.label
+                          key={color}
+                          className="flex items-center p-3 bg-white/10 rounded-lg cursor-pointer hover:bg-white/20 transition-colors"
+                          whileHover={{ scale: 1.02 }}
+                        >
+                          <input
+                            type="radio"
+                            name="fabric"
+                            value={color}
+                            checked={selectedFabric === color}
+                            onChange={(e) => setSelectedFabric(e.target.value)}
+                            className="mr-3 w-4 h-4 text-primary-500 rounded"
+                          />
+                          <span className="text-white capitalize">{color}</span>
+                          <span className="ml-auto text-primary-500 font-semibold">+100 TL</span>
+                        </motion.label>
+                      ))}
+                    </div>
+                    <div className="pt-4 border-t border-white/20">
+                      <motion.label
+                        className="flex items-center p-3 bg-white/10 rounded-lg cursor-pointer hover:bg-white/20 transition-colors"
+                        whileHover={{ scale: 1.02 }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedEmbedded}
+                          onChange={(e) => setSelectedEmbedded(e.target.checked)}
+                          className="mr-3 w-4 h-4 text-primary-500 rounded"
+                        />
+                        <span className="text-white">Çemberler Gömmeli (+150 TL)</span>
+                        <span className="ml-auto text-primary-500 font-semibold">+150 TL</span>
+                      </motion.label>
+                      <AnimatePresence>
+                        {selectedEmbedded && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="pt-2"
+                          >
+                            <h5 className="text-md font-semibold text-primary-500 mb-2">Çember Rengi Seçimi</h5>
+                            {['beyaz', 'siyah', 'gümüş'].map((color) => (
+                              <motion.label
+                                key={color}
+                                className="flex items-center p-2 bg-white/10 rounded cursor-pointer hover:bg-white/20 transition-colors ml-6"
+                                whileHover={{ scale: 1.02 }}
+                              >
+                                <input
+                                  type="radio"
+                                  name="circleColor"
+                                  value={color}
+                                  checked={selectedCircleColor === color}
+                                  onChange={(e) => setSelectedCircleColor(e.target.value)}
+                                  className="mr-3 w-4 h-4 text-primary-500 rounded"
+                                />
+                                <span className="text-white capitalize">{color}</span>
+                              </motion.label>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
                   <div className="flex space-x-4 mt-6">
                     <motion.button
