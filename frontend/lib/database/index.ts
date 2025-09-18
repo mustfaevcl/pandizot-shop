@@ -3,7 +3,33 @@
 
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+let globalPrisma: PrismaClient;
+
+export async function getPrisma() {
+  if (globalPrisma) {
+    return globalPrisma;
+  }
+  globalPrisma = new PrismaClient();
+  return globalPrisma;
+}
+
+// Mock client for no-DB mode
+export const mockPrisma = {
+  user: {
+    findUnique: async () => null,
+    create: async () => ({ id: 'mock', name: 'Mock', email: 'mock', role: 'user' }),
+  },
+  pricingRule: {
+    findFirst: async () => null,
+    createMany: async () => {},
+    count: async () => 0,
+  },
+  order: {
+    findMany: async () => [],
+    create: async () => ({ id: 'mock', status: 'preparing' }),
+    createMany: async () => {},
+  },
+};
 
 // ============== User =================
 export interface User {
@@ -67,7 +93,8 @@ export async function computePrice(input: {
   speakerCount: number;
   tweeterCount: number;
 }): Promise<number> {
-  const rule = await prisma.pricingRule.findFirst({
+  const prismaClient = await getPrisma();
+  const rule = await prismaClient.pricingRule.findFirst({
     where: {
       vehicleBrand: input.brand,
       vehicleModel: input.model,
@@ -94,9 +121,10 @@ export async function ensureDB() {
 
 // Example seed helper
 export async function seedExamples() {
-  const count = await prisma.pricingRule.count();
+  const prismaClient = await getPrisma();
+  const count = await prismaClient.pricingRule.count();
   if (count === 0) {
-    await prisma.pricingRule.createMany({
+    await prismaClient.pricingRule.createMany({
       data: [
         {
           vehicleBrand: 'Volkswagen',
