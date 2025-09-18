@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Analytics } from '@vercel/analytics/react'
 import { Inter } from 'next/font/google';
 import NavBar from '@/components/NavBar';
 import './globals.css';
@@ -35,7 +36,8 @@ export default function RootLayout({
         <main className="min-h-screen pt-16"> {/* Offset for fixed nav */}
           {children}
         </main>
-      </body>
-    </html>
+      <Analytics />
+    </body>
+  </html>
   );
 }
