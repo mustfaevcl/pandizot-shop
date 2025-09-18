@@ -1,18 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: ['mongoose'],
+    serverComponentsExternalPackages: ['@prisma/client'],
   },
-  transpilePackages: ['mongoose'],
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        "mongoose": false,
-      };
-    }
-    return config;
-  },
+  transpilePackages: ['@prisma/client'],
 }
 
 module.exports = nextConfig
