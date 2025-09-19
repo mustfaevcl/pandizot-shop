@@ -18,8 +18,8 @@ export default function NavBar() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
-          <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-neon bg-clip-text text-transparent">
-            PANDIZOT
+          <Link href="/" className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary-500 to-neon bg-clip-text text-transparent">
+            Hakan Pandizot
           </Link>
 
           {/* Desktop Nav */}

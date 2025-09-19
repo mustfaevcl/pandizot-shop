@@ -5,6 +5,7 @@ interface CartItem {
   id: string;
   vehicleBrand: string;
   vehicleModel: string;
+  category: string;
   speakerType: string;
   speakerCount: number;
   tweeterCount: number;
